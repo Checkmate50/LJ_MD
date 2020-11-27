@@ -3,6 +3,15 @@
 #include <stdbool.h>
 #include <string.h>
 
+void slice_str(const char * str, char * buffer, size_t start, size_t end)
+{
+  size_t j = 0;
+  for ( size_t i = start; i <= end; ++i ) {
+    buffer[j++] = str[i];
+  }
+  buffer[j] = 0;
+}
+
 struct atomStruct {
   char element;
   double x, y, z;
@@ -33,13 +42,26 @@ Molecule* new_Molecule(int size, Atom** atoms) {
   return m;
 }
 
-void slice_str(const char * str, char * buffer, size_t start, size_t end)
-{
-  size_t j = 0;
-  for ( size_t i = start; i <= end; ++i ) {
-    buffer[j++] = str[i];
+void bound(double* value, double upper, double lower) {
+  size = upper - lower;
+  if (*value > upper)
+    *value -= size;
+  else if (*value < lower)
+    *value += size;
+}
+
+void calculate_new_positions(Molecule* mol) {
+  srand ( time ( NULL));
+  
+  for (int i = 0; i < mol->count; i++) {
+    mol->atoms[i]->x += ((double)rand()/RAND_MAX) - .5;
+    mol->atoms[i]->y += ((double)rand()/RAND_MAX) - .5;
+    mol->atoms[i]->z += ((double)rand()/RAND_MAX) - .5;
+    
+    bound(&mol->atoms[i]->x, 5.0, 0.0);
+    bound(&mol->atoms[i]->y, 5.0, 0.0);
+    bound(&mol->atoms[i]->z, 5.0, 0.0);
   }
-  buffer[j] = 0;
 }
 
 bool check_xyz(const char* filename) {
@@ -59,9 +81,11 @@ Molecule* read_xyz(const char* filename) {
   fp = fopen(filename, "r");
   fgets(buff, 255, fp);
   long count = strtol(buff, &END, 10);
+  
   fgets(buff, 255, fp); // Skip blank line
   char* deliminator = " \t";
   Atom** atoms = malloc(sizeof(Atom*) * count);
+  
   for (int i = 0; i < count; i++) {
     fgets(buff, 255, fp);
     // Tokenize the element name and the XYZ positions
@@ -88,16 +112,14 @@ void write_xyz(const char* filename, Molecule* mol) {
   fclose(fp);
 }
 
-void write_xyz_list(const char* filename, Molecule** molecules, int count) {
+void write_xyz_format(const char* filename, Molecule* molecules, int count) {
   char f[500];
   char istr[50];
-  for (int i = 0; i < count; i++) {
-    strcpy(f, filename);
-    sprintf(istr, "%d", i);
-    strcat(f, istr);
-    strcat(f, ".xyz");
-    write_xyz(f, molecules[i]);
-  }
+  strcpy(f, filename);
+  sprintf(istr, "%d", count);
+  strcat(f, istr);
+  strcat(f, ".xyz");
+  write_xyz(f, molecules[i]);
 }
 
 int main(int argc, char* argv[]) {
@@ -120,9 +142,9 @@ int main(int argc, char* argv[]) {
   }
   
   Molecule* mol = read_xyz(instr);
-  Molecule* mols[1];
-  mols[0] = mol;
-  write_xyz_list(outstr, mols, 1);
+  for (int i = 0; i < 5; i++) {
+    write_xyz_format(outstr, mol, i);
+  }
   
   return 0;
 }
