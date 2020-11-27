@@ -1,5 +1,5 @@
-# LJ_MD
-Simple molecular dynamics simulator using Lennard-Jones potential
+## Lennard-Jones Molecular-Dynamics Simulator
+Simple molecular dynamics simulator using Lennard-Jones potential.  Takes XYZ files as input and spits out XYZ files for use with VMD.
 
 To build, run make build
 To run on a file with the name "filename".xyz, run make run F=filename
