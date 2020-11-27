@@ -8,12 +8,13 @@ struct atomStruct {
   double x, y, z;
 };
 
+typedef struct atomStruct Atom;
+
 struct moleculeStruct {
   int size;
-  struct Atom* atoms;
+  Atom** atoms;
 };
 
-typedef struct atomStruct Atom;
 typedef struct moleculeStruct Molecule;
 
 Atom* new_Atom(char element, double x, double y, double z) {
@@ -25,7 +26,7 @@ Atom* new_Atom(char element, double x, double y, double z) {
   return a;
 }
 
-Molecule* new_Molecule(int size, struct Atom* atoms) {
+Molecule* new_Molecule(int size, Atom** atoms) {
   Molecule* m = malloc(sizeof(Molecule));
   m->size = size;
   m->atoms = atoms;
@@ -60,21 +61,43 @@ Molecule* read_xyz(const char* filename) {
   long count = strtol(buff, &END, 10);
   fgets(buff, 255, fp); // Skip blank line
   char* deliminator = " \t";
+  Atom** atoms = malloc(sizeof(Atom*) * count);
   for (int i = 0; i < count; i++) {
     fgets(buff, 255, fp);
+    // Tokenize the element name and the XYZ positions
+    // Expect XYZ file format, don't bother checking this stuff
     char element = strtok(buff, deliminator)[0];
     double x = strtod(strtok(NULL, deliminator), &END);
     double y = strtod(strtok(NULL, deliminator), &END);
     double z = strtod(strtok(NULL, deliminator), &END);
-    printf("%c %f %f %f\n", element, x, y, z);
+    atoms[i] = new_Atom(element, x, y, z);
   }
   fclose(fp);
+  return new_Molecule(count, atoms);
 }
 
 void write_xyz(const char* filename, Molecule* mol) {
   FILE *fp;
   fp = fopen(filename, "w");
+  fprintf(fp, "%d\n\n", mol->size);
+  Atom* atom;
+  for (int i = 0; i < mol->size; i++) {
+    atom = mol->atoms[i];
+    fprintf(fp, "%c %f %f %f\n", atom->element, atom->x, atom->y, atom->z);
+  }
   fclose(fp);
+}
+
+void write_xyz_list(const char* filename, Molecule** molecules, int count) {
+  char f[500];
+  char istr[50];
+  for (int i = 0; i < count; i++) {
+    strcpy(f, filename);
+    sprintf(istr, "%d", i);
+    strcat(f, istr);
+    strcat(f, ".xyz");
+    write_xyz(f, molecules[i]);
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -97,7 +120,9 @@ int main(int argc, char* argv[]) {
   }
   
   Molecule* mol = read_xyz(instr);
-  write_xyz(outstr, mol);
+  Molecule* mols[1];
+  mols[0] = mol;
+  write_xyz_list(outstr, mols, 1);
   
   return 0;
 }
