@@ -9,6 +9,7 @@ build:
 	$(CC) lj_md.c -o lj_md.out
 
 run:
+	rm -rf results/*
 	./lj_md.out $(SOURCE) $(DIR)
 
 vmd:
@@ -16,4 +17,4 @@ vmd:
 	
 clean:
 	rm -f *.out *.stackdump
-	rm -rf results/*
+	rm -r results/*
